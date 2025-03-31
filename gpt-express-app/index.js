@@ -1,48 +1,104 @@
-// 필요한 모듈 불러오기
 const express = require('express');
+const sqlite3 = require('sqlite3').verbose();
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const axios = require('axios');
-require('dotenv').config();  // .env 파일에서 환경변수 불러오기
+const path = require('path');
+const cors = require('cors');  // cors 패키지 추가
+require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 3000;
+const SECRET_KEY = process.env.SECRET_KEY || 'rlaehdgns12';
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));  // Serving static files (HTML, JS, CSS)
+app.use(cors());  // CORS 허용
 
-// OpenAI API 설정
+// SQLite database setup
+const db = new sqlite3.Database('./users.db', (err) => {
+  if (err) {
+    console.error('Error opening database', err);
+  } else {
+    db.run(`CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT UNIQUE,
+      password TEXT
+    )`);
+  }
+});
+
+// User registration endpoint
+app.post('/register', async (req, res) => {
+  const { username, password } = req.body;
+  console.log(username)
+  console.log(password)
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Username and password are required' });
+  }
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    db.run('INSERT INTO users (username, password) VALUES (?, ?)', [username, hashedPassword], (err) => {
+      if (err) {
+        return res.status(400).json({ error: 'Username already exists' });
+      }
+      res.json({ message: 'User registered successfully' });
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Error registering user' });
+  }
+});
+
+// User login endpoint
+app.post('/login', (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Username and password are required' });
+  }
+  db.get('SELECT * FROM users WHERE username = ?', [username], async (err, user) => {
+    if (err || !user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    const token = jwt.sign({ userId: user.id }, SECRET_KEY, { expiresIn: '1h' });
+    res.json({ token });
+  });
+});
+
+// Authentication middleware
+function authenticateToken(req, res, next) {
+  const token = req.header('Authorization');
+  if (!token) return res.status(401).json({ error: 'Access denied' });
+  try {
+    const verified = jwt.verify(token.replace('Bearer ', ''), SECRET_KEY);
+    req.user = verified;
+    next();
+  } catch (error) {
+    res.status(401).json({ error: 'Invalid token' });
+  }
+}
+
+// In-memory object to store conversation history
+let conversationHistory = {};
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
-// 대화 내역을 서버 메모리에 저장 (일반적으로 데이터베이스에 저장하지만, 간단한 예시로 메모리 사용)
-let conversationHistory = {};
-
-// GPT API 호출 함수
+// Function to get GPT response
 async function getGPTResponse(userId, message) {
   try {
-    // 대화 기록 불러오기 (사용자 ID 기준으로 저장된 대화 내역)
     const conversation = conversationHistory[userId] || [];
-
-    // 사용자 메시지 추가
     conversation.push({ role: 'user', content: message });
 
     const response = await axios.post(
       OPENAI_API_URL,
-      {
-        model: 'gpt-4',  // gpt-4 또는 gpt-3.5-turbo 모델 사용
-        messages: conversation,  // 대화 내역을 모두 전달
-        max_tokens: 150,  // 응답 길이 설정
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-        }
-      }
+      { model: 'gpt-4', messages: conversation, max_tokens: 150 },
+      { headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' } }
     );
 
-    // GPT의 응답을 대화 내역에 추가
     const gptMessage = response.data.choices[0].message.content;
     conversation.push({ role: 'assistant', content: gptMessage });
-
-    // 대화 내역을 저장 (메모리, DB 등)
     conversationHistory[userId] = conversation;
 
     return gptMessage;
@@ -52,23 +108,21 @@ async function getGPTResponse(userId, message) {
   }
 }
 
-// 대화 요청 처리
-app.post('/ask', async (req, res) => {
-  const { userId, message } = req.body;  // 사용자 ID와 메시지 받기
-
-  if (!userId || !message) {
-    return res.status(400).send({ error: 'User ID and message are required' });
+// Endpoint for authenticated users to ask questions
+app.post('/ask', authenticateToken, async (req, res) => {
+  const { message } = req.body;
+  if (!message) {
+    return res.status(400).json({ error: 'Message is required' });
   }
-
   try {
-    const gptResponse = await getGPTResponse(userId, message);
-    return res.json({ response: gptResponse });
+    const gptResponse = await getGPTResponse(req.user.userId, message);
+    res.json({ response: gptResponse });
   } catch (error) {
-    return res.status(500).send({ error: 'Failed to get response from GPT' });
+    res.status(500).json({ error: 'Failed to get response from GPT' });
   }
 });
 
-// 서버 실행
+// Start the server
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
