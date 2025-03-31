@@ -1,26 +1,34 @@
+// 필요한 모듈 불러오기
 const express = require('express');
 const axios = require('axios');
-require('dotenv').config(); // .env 파일에서 환경변수 불러오기
+require('dotenv').config();  // .env 파일에서 환경변수 불러오기
 
-// Express 앱 설정
 const app = express();
 const port = process.env.PORT || 3000;
-
-app.use(express.json()); // JSON 요청을 처리하기 위한 미들웨어
+app.use(express.json());
 
 // OpenAI API 설정
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
-// GPT-3 또는 GPT-4 모델에 요청을 보내는 함수
-async function getGPTResponse(message) {
+// 대화 내역을 서버 메모리에 저장 (일반적으로 데이터베이스에 저장하지만, 간단한 예시로 메모리 사용)
+let conversationHistory = {};
+
+// GPT API 호출 함수
+async function getGPTResponse(userId, message) {
   try {
+    // 대화 기록 불러오기 (사용자 ID 기준으로 저장된 대화 내역)
+    const conversation = conversationHistory[userId] || [];
+
+    // 사용자 메시지 추가
+    conversation.push({ role: 'user', content: message });
+
     const response = await axios.post(
       OPENAI_API_URL,
       {
         model: 'gpt-4',  // gpt-4 또는 gpt-3.5-turbo 모델 사용
-        messages: [{ role: 'user', content: message }],
-        max_tokens: 100,  // 원하는 응답 길이 설정
+        messages: conversation,  // 대화 내역을 모두 전달
+        max_tokens: 150,  // 응답 길이 설정
       },
       {
         headers: {
@@ -29,24 +37,32 @@ async function getGPTResponse(message) {
         }
       }
     );
-    return response.data.choices[0].message.content;
+
+    // GPT의 응답을 대화 내역에 추가
+    const gptMessage = response.data.choices[0].message.content;
+    conversation.push({ role: 'assistant', content: gptMessage });
+
+    // 대화 내역을 저장 (메모리, DB 등)
+    conversationHistory[userId] = conversation;
+
+    return gptMessage;
   } catch (error) {
-    console.error('Error communicating with GPT:', error);
+    console.error('Error communicating with GPT:', error.response ? error.response.data : error.message);
     throw new Error('Failed to get GPT response');
   }
 }
 
-// GPT API와 연결된 POST 요청 핸들러
+// 대화 요청 처리
 app.post('/ask', async (req, res) => {
-  const { message } = req.body;  // 사용자로부터 메시지 받기
+  const { userId, message } = req.body;  // 사용자 ID와 메시지 받기
 
-  if (!message) {
-    return res.status(400).send({ error: 'Message is required' });
+  if (!userId || !message) {
+    return res.status(400).send({ error: 'User ID and message are required' });
   }
 
   try {
-    const gptResponse = await getGPTResponse(message);  // GPT API 호출
-    return res.json({ response: gptResponse });  // GPT의 응답을 클라이언트에 전달
+    const gptResponse = await getGPTResponse(userId, message);
+    return res.json({ response: gptResponse });
   } catch (error) {
     return res.status(500).send({ error: 'Failed to get response from GPT' });
   }
