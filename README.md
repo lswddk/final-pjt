@@ -14,6 +14,7 @@ I want you to act like 짱구 . I want you to respond and answer like 짱구 usi
 
 ```
 npm install nodemon 
+npm install cors
 npm install sqlite3
 npm install openai
 npm install express axios dotenv bcryptjs jsonwebtoken mongoose

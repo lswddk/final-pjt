@@ -49,6 +49,7 @@ app.post('/register', async (req, res) => {
 });
 
 // User login endpoint
+// User login endpoint
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
@@ -56,14 +57,14 @@ app.post('/login', (req, res) => {
   }
   db.get('SELECT * FROM users WHERE username = ?', [username], async (err, user) => {
     if (err || !user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({ error: '유효하지 않은 계정입니다.' });  // 계정이 없으면 이 메시지 반환
     }
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({ error: '잘못된 비밀번호입니다.' });  // 비밀번호가 맞지 않으면 이 메시지 반환
     }
     const token = jwt.sign({ userId: user.id }, SECRET_KEY, { expiresIn: '1h' });
-    res.json({ token });
+    res.json({ token, userId: user.id });  // 로그인 성공 후 토큰과 userId 반환
   });
 });
 
@@ -93,7 +94,7 @@ async function getGPTResponse(userId, message) {
 
     const response = await axios.post(
       OPENAI_API_URL,
-      { model: 'gpt-4', messages: conversation, max_tokens: 150 },
+      { model: 'gpt-4', messages: conversation, max_tokens: 500 },
       { headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' } }
     );
 

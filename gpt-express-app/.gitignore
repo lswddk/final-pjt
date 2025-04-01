@@ -1,2 +1,4 @@
 node_modules/
 .env
+# 모든 .db 파일을 무시
+*.db

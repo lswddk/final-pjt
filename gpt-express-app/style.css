@@ -1,0 +1,194 @@
+/* 기본 스타일 */
+body {
+  font-family: 'Arial', sans-serif;
+  background-color: #f4f4f9;
+  color: #333;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  text-align: center;
+}
+
+/* Chatbot title 스타일 */
+.chatbot-title {
+  font-size: 2.5em;
+  font-weight: bold;
+  color: #4caf50;
+  margin-bottom: 20px;
+  font-family: 'Comic Sans MS', cursive, sans-serif; /* 귀엽고 편안한 느낌의 폰트 */
+}
+
+/* 채팅 화면 스타일 */
+.chat-section {
+  width: 100%;
+  max-width: 500px;
+  height: 70%;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow-y: auto;
+}
+
+/* 채팅 박스 */
+#chat-box {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding-right: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;  /* 왼쪽 정렬 */
+}
+
+/* 사용자 메시지 스타일 */
+.user-message {
+  background-color: #d1e7ff;
+  text-align: left;
+  border-radius: 20px 20px 0 20px;
+  margin-left: auto; /* 오른쪽 정렬 */
+  margin-right: 0;
+  padding: 10px;
+  margin-bottom: 10px;
+  max-width: 80%;
+  opacity: 0;  /* 초기 투명도 */
+  animation: typing 1s forwards;  /* 타이핑 효과 */
+}
+
+/* AI 메시지 스타일 */
+.gpt-message {
+  background-color: #e6e6e6;
+  text-align: left;
+  border-radius: 20px 20px 20px 0;
+  margin-left: 0;  /* 왼쪽 정렬 */
+  margin-right: auto; /* 오른쪽에 배치되지 않도록 */
+  padding: 10px;
+  margin-bottom: 10px;
+  max-width: 80%;
+  opacity: 0;  /* 초기 투명도 */
+  animation: typing 1.5s forwards;  /* 타이핑 효과 */
+}
+
+/* 타이핑 애니메이션 */
+@keyframes typing {
+  0% {
+    opacity: 0;
+    width: 0;
+  }
+  100% {
+    opacity: 1;
+    width: auto;
+  }
+}
+
+#message-input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 20px;
+  border: 1px solid #ddd;
+  margin-top: 10px;
+  font-size: 14px;
+  box-sizing: border-box; /* 크기를 계산할 때 padding을 포함하도록 */
+}
+
+#send-message-btn {
+  padding: 10px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+#send-message-btn:hover {
+  background-color: #45a049;
+}
+
+/* 로그인 및 회원가입 스타일 */
+.auth-section {
+  width: 100%;
+  max-width: 500px;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.auth-form {
+  width: 100%;
+  max-width: 400px;
+  margin: 10px;
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  margin: 5px 0;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+}
+
+button {
+  padding: 10px;
+  width: 100%;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+/* 로그인 화면에서 로고와 텍스트 중앙 정렬 */
+.login-header {
+  display: block;                /* 로그인 화면에서만 보이게 */
+  position: absolute;            /* 절대 위치 */
+  top: 20px;                     /* 상단에 위치 */
+  left: 50%;                     /* 화면 중앙 */
+  transform: translateX(-50%);   /* 중앙 정렬 */
+  text-align: center;            /* 텍스트 중앙 정렬 */
+  z-index: 1000;                 /* 다른 요소 위에 위치 */
+}
+
+/* 로그인 화면 로고 크기 */
+.login-logo {
+  width: 500px;                  /* 로고 크기 */
+  height: auto;                  /* 비율에 맞춰 크기 자동 조정 */
+}
+
+/* 로그인 화면 텍스트 스타일 */
+.login-header h1 {
+  font-size: 24px;               /* 텍스트 크기 */
+  font-weight: bold;             /* 텍스트 두껍게 */
+  color: #333;                   /* 텍스트 색상 */
+  margin-top: 10px;              /* 로고와 텍스트 간격 */
+}
+
+/* 로그인 화면에서만 보이고, 대화 화면에서는 보이지 않도록 설정 */
+.chat-section .login-header {
+  display: none;
+}
+
+/* 대화 화면에서 로그인 화면의 헤더를 숨김 */
+.login-section .login-header {
+  display: none;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+button:disabled {
+  background-color: #b8e2b8;
+  cursor: not-allowed;
+}
