@@ -85,16 +85,28 @@ function authenticateToken(req, res, next) {
 let conversationHistory = {};
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
-
 // Function to get GPT response
 async function getGPTResponse(userId, message) {
   try {
+    // 기존 대화 가져오기
     const conversation = conversationHistory[userId] || [];
+
+    // 시스템 메시지 추가 (시스템 메시지는 대화의 초기 설정을 담당)
+    const systemMessage = {
+      role: 'system',
+      content: '반말로만 메이드처럼 말할것 마지막에 위서현 주인님이라고 할것것'
+    };
+
+    // 사용자 메시지 추가
     conversation.push({ role: 'user', content: message });
 
+    // 전체 메시지 배열 (시스템 메시지, 사용자 메시지 포함)
+    const messages = [systemMessage, ...conversation];
+
+    // GPT API 요청
     const response = await axios.post(
       OPENAI_API_URL,
-      { model: 'gpt-4', messages: conversation, max_tokens: 500 },
+      { model: 'gpt-4', messages: messages, max_tokens: 500 },
       { headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' } }
     );
 
@@ -108,6 +120,7 @@ async function getGPTResponse(userId, message) {
     throw new Error('Failed to get GPT response');
   }
 }
+
 
 // Endpoint for authenticated users to ask questions
 app.post('/ask', authenticateToken, async (req, res) => {
