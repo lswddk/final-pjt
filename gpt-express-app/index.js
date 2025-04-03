@@ -41,7 +41,7 @@ app.post('/register', async (req, res) => {
       if (err) {
         return res.status(400).json({ error: 'Username already exists' });
       }
-      res.json({ message: 'User registered successfully' });
+      res.json({ message: '회원가입에 성공하였습니다' });
     });
   } catch (error) {
     res.status(500).json({ error: 'Error registering user' });
@@ -94,7 +94,7 @@ async function getGPTResponse(userId, message) {
     // 시스템 메시지 추가 (시스템 메시지는 대화의 초기 설정을 담당)
     const systemMessage = {
       role: 'system',
-      content: '반말로만 메이드처럼 말할것 마지막에 위서현 주인님이라고 할것것'
+      content: '착한 aiu'
     };
 
     // 사용자 메시지 추가
